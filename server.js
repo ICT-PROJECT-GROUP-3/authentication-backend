@@ -7,8 +7,14 @@ const { logger } = require('./middleware/logEvents');
 const errorHandler = require('./middleware/errorHandler');
 const verifyJWT = require('./middleware/verifyJWT');
 const cookieParser = require('cookie-parser');
+const bodyParser = require('body-parser');
 const credentials = require('./middleware/credentials');
 const PORT = process.env.PORT || 3500;
+const multer = require('multer');
+const upload = multer();
+
+
+app.use(bodyParser.urlencoded({ extended: true }));
 
 // custom middleware logger
 app.use(logger);
@@ -21,7 +27,7 @@ app.use(credentials);
 app.use(cors(corsOptions));
 
 // built-in middleware to handle urlencoded form data
-app.use(express.urlencoded({ extended: false }));
+app.use(express.urlencoded({ extended: true }));
 
 // built-in middleware for json 
 app.use(express.json());
@@ -31,6 +37,14 @@ app.use(cookieParser());
 
 //serve static files
 app.use('/', express.static(path.join(__dirname, '/public')));
+
+app.use(upload.none());
+
+// Import your routes and controllers
+const authController = require('./controllers/authController');
+
+// Define your routes
+app.post('/login', authController.handleLogin);
 
 // routes
 app.use('/', require('./routes/root'));
