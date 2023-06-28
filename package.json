@@ -5,7 +5,8 @@
   "main": "server.js",
   "scripts": {
     "start": "node server",
-    "dev": "nodemon server"
+    "dev": "nodemon server",
+    "build": "node build.js"
   },
   "author": "Dave Gray",
   "license": "ISC",
@@ -23,6 +24,7 @@
     "uuid": "^8.3.2"
   },
   "devDependencies": {
+    "@babel/cli": "^7.22.5",
     "nodemon": "^2.0.12"
   }
 }
