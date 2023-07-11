@@ -25,6 +25,7 @@
   },
   "devDependencies": {
     "@babel/cli": "^7.22.5",
-    "nodemon": "^2.0.12"
+    "nodemon": "^2.0.12",
+    "typedoc": "^0.24.8"
   }
 }

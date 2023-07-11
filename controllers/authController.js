@@ -2,6 +2,7 @@
 //     users: require('../model/users.json'),
 //     setUsers: function (data) { this.users = data }
 // }
+
 const bcrypt = require('bcrypt');
 const { createClient } = require('@sanity/client');
 
@@ -18,75 +19,79 @@ const fsPromises = require('fs').promises;
 const path = require('path');
 const { postData } = require('../routes/api/sanity');
 
+/**
+ * Handles the login request.
+ * @param req - The request object.
+ * @param res - The response object.
+ */
 const handleLogin = async (req, res) => {
-    const { user, pwd } = req.body;
-    console.log("User 1:" + user);
-    console.log("Password 1 :" + pwd);
-    if (!user || !pwd) return res.status(400).json({ 'message': 'Username and password are required.' });
-   
-    // fetch the user from sanity
-    client
-  .fetch('*[_type == "user" && email == $user]', { user })// Replace "your-data-type" with the actual type you want to query
-  .then((data) => {
-    // Handle the fetched data
-    console.log(data);
-      data.forEach((user) => {
-      // Access and display the desired fields
-      console.log('User:', user.name);
-      console.log('Email:', user.email);
-      console.log('refreshToken:', user.refreshToken);
-      console.log('role:', user.role);
-      console.log('password:', user.password);
+  const { user, pwd } = req.body;
+  console.log("User 1:" + user);
+  console.log("Password 1 :" + pwd);
+  if (!user || !pwd)
+    return res.status(400).json({ 'message': 'Username and password are required.' });
 
- 
-    if (!user) return res.sendStatus(401); //Unauthorized 
-    // evaluate password 
-    const match = bcrypt.compare(pwd, user.password);
-    if (match) {
-        const roles = Object.values(user.role);
-        // create JWTs
-        const accessToken = jwt.sign(
-            { 
-                "UserInfo":{
+  // fetch the user from sanity
+  client
+    .fetch('*[_type == "user" && email == $user]', { user }) // Replace "your-data-type" with the actual type you want to query
+    .then((data) => {
+      // Handle the fetched data
+      console.log(data);
+      data.forEach((user) => {
+        // Access and display the desired fields
+        console.log('User:', user.name);
+        console.log('Email:', user.email);
+        console.log('refreshToken:', user.refreshToken);
+        console.log('role:', user.role);
+        console.log('password:', user.password);
+
+        if (!user) return res.sendStatus(401); // Unauthorized
+        // evaluate password
+        const match = bcrypt.compare(pwd, user.password);
+        if (match) {
+          const roles = Object.values(user.role);
+          // create JWTs
+          const accessToken = jwt.sign(
+            {
+              "UserInfo": {
                 "username": user.name,
-                "roles":roles,
-            }
+                "roles": roles,
+              }
             },
             process.env.ACCESS_TOKEN_SECRET,
             { expiresIn: '30s' }
-        );
-        const refreshToken = jwt.sign(
+          );
+          const refreshToken = jwt.sign(
             { "username": user.name },
             process.env.REFRESH_TOKEN_SECRET,
             { expiresIn: '1d' }
-        );
-        // Saving refreshToken with current user
-        const currentUser = { 
-            "name":user.name, 
-            "email":user.email,
+          );
+          // Saving refreshToken with current user
+          const currentUser = {
+            "name": user.name,
+            "email": user.email,
             "password": user.password,
-            "role":user.role,
-            "image":user.image,
-            "id":user._id,
-            "created_at":user._createdAt,
-            "refreshToken":refreshToken
-           };
-  
-        res.cookie('jwt', refreshToken, { httpOnly: true, sameSite: 'None', secure: true, maxAge: 24 * 60 * 60 * 1000 });
-        res.json({ accessToken, user:currentUser });
-    }
-     else {
-        return res.status(500).json({ 'message': 'Incorrect email or password.' });
-    }
-    //   console.log('Address:', user.address);
-      console.log('---');
-    });
+            "role": user.role,
+            "image": user.image,
+            "id": user._id,
+            "created_at": user._createdAt,
+            "refreshToken": refreshToken
+          };
 
-  })
-  .catch((error) => {
-    // Handle any errors that occur during the fetch
-    console.error('Error:', error);
-  });
-}
+          res.cookie('jwt', refreshToken, { httpOnly: true, sameSite: 'None', secure: true, maxAge: 24 * 60 * 60 * 1000 });
+          res.json({ accessToken, user: currentUser });
+        } else {
+          return res.status(500).json({ 'message': 'Incorrect email or password.' });
+        }
+        //   console.log('Address:', user.address);
+        console.log('---');
+      });
+
+    })
+    .catch((error) => {
+      // Handle any errors that occur during the fetch
+      console.error('Error:', error);
+    });
+};
 
 module.exports = { handleLogin };
